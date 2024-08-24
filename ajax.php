@@ -107,7 +107,6 @@ if($action == 'save_progress'){
 		$response['status'] = 'success';
 		$response['message'] = 'Tarea creada satisfactoriamente';
 		echo json_encode($response);
-		#echo $save;
 }
 if($action == 'delete_progress'){
 	$save = $crud->delete_progress();
@@ -130,9 +129,9 @@ if($action == 'get_emp_tasks'){
 		echo $get;
 }
 if($action == 'get_progress'){
-	$get = $crud->get_progress();
+	$get = $crud->get_progress($task_id);
 	if($get)
-		echo $get;
+		echo json_encode($response);
 }
 if($action == 'get_report'){
 	$get = $crud->get_report();

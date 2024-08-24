@@ -231,10 +231,9 @@ $progress = $conn->query("
                         $('input').removeClass("border-danger");
                         $('#message-box').html(''); 
 
-                        // Comentado: Recargar la página después de mostrar el mensaje
-                        // setTimeout(function() {
-                        //     location.reload(); 
-                        // }, 1500);
+                        // Actualiza el timeline sin recargar la página
+                        updateTimeline();
+                        
                     } else {
                         $('#errorMessage').text(data.message);
                         var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
@@ -249,6 +248,39 @@ $progress = $conn->query("
                 }
             });
         });
+
+            function updateTimeline() {
+                var taskId = <?php echo json_encode($id); ?>;
+
+                $.ajax({
+                    url: 'ajax.php?action=get_progress',
+                    method: 'POST',
+                    data: { id: taskId },
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('Datos recibidos:', response); // Imprime los datos recibidos en la consola
+                        
+                        // Imprime los datos en una sección del frontend para depuración
+                        $('#debug-output').html('<pre>' + JSON.stringify(response, null, 2) + '</pre>');
+
+                        if (Array.isArray(response)) {
+                            $('.timeline-items').html(response.map(item => 
+                                `<div class="timeline-item">
+                                    <h5>${item.action}</h5>
+                                    <p>${item.FechaCalendario}</p>
+                                </div>`
+                            ).join(''));
+                        } else if (response.status === 'error') {
+                            console.error('Error en la respuesta:', response.message);
+                        } else {
+                            console.error('Respuesta inesperada:', response);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error en la solicitud AJAX:', xhr.responseText);
+                    }
+                });
+            }
     });
 </script>
 

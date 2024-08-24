@@ -612,19 +612,36 @@ Class Action {
 		}
 		return json_encode($data);
 	}
-	function get_progress(){
-		extract($_POST);
-		$get = $this->db->query("SELECT p.*,concat(u.firstname,' ',u.lastname) as uname,u.avatar FROM task_progress p inner join task_list t on t.id = p.task_id inner join employee_list u on u.id = t.employee_id where p.task_id = $task_id order by unix_timestamp(p.date_created) desc ");
+	#function get_progress(){
+	#	extract($_POST);
+	#	$get = $this->db->query("SELECT p.*,concat(u.firstname,' ',u.lastname) as uname,u.avatar FROM task_progress p inner join task_list t on t.id = p.task_id inner join employee_list u on u.id = t.employee_id where p.task_id = $task_id order by unix_timestamp(p.date_created) desc ");
+	#	$data = array();
+	#	while($row=$get->fetch_assoc()){
+	#		$row['uname'] = ucwords($row['uname']);
+	#		$row['progress'] = html_entity_decode($row['progress']);
+	#		$row['date_created'] = date("M d, Y",strtotime($row['date_created']));
+	#		$data[] = $row;
+	#	}
+	#	return json_encode($data);
+	#}
+
+	function get_progress($task_id) {
+		
+		$task_id = isset($_POST['id']) ? $_POST['id'] : null;
+		$get = $this->db->query("SELECT p.*,  t.task AS task_title, CONCAT(u.firstname, ' ', u.lastname) AS uname, u.avatar, DATE_FORMAT(p.date_created, '%Y-%m-%d') AS calendar_date FROM task_progress p INNER JOIN task_list t ON t.id = p.task_id INNER JOIN employee_list u ON u.id = t.employee_id WHERE p.task_id = '$task_id' ORDER BY p.date_created ASC ");
 		$data = array();
-		while($row=$get->fetch_assoc()){
-			$row['uname'] = ucwords($row['uname']);
-			$row['progress'] = html_entity_decode($row['progress']);
-			$row['date_created'] = date("M d, Y",strtotime($row['date_created']));
-			$data[] = $row;
+	
+		// Itera sobre los resultados de la consulta
+		while ($row = $get->fetch_assoc()) {
+			// Procesa los datos de cada fila
+			$row['action'] = ucwords($row['action']); // Capitaliza el nombre del usuario
+			$row['FechaCalendario'] = date("M d, Y", strtotime($row['FechaCalendario'])); // Formatea la fecha
+			$data[] = $row; // Añade la fila al array de resultados
 		}
+		// Devuelve los datos en formato JSON
 		return json_encode($data);
 	}
-	function get_report(){
+	function get_report($task_id){
 		extract($_POST);
 		$data = array();
 		$get = $this->db->query("SELECT t.*,p.name as ticket_for FROM ticket_list t inner join pricing p on p.id = t.pricing_id where date(t.date_created) between '$date_from' and '$date_to' order by unix_timestamp(t.date_created) desc ");
