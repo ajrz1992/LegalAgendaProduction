@@ -548,6 +548,8 @@ Class Action {
 			$data .= ", is_complete=0 ";
 		if(empty($id)){
 			$save = $this->db->query("INSERT INTO task_progress set $data");
+			return array('status' => 'success', 'message' => 'Tarea creada satisfactoriamente');
+			
 		}else{
 			$save = $this->db->query("UPDATE task_progress set $data where id = $id");
 		}
@@ -635,6 +637,8 @@ Class Action {
 			$data[]=$row;
 		}
 		return json_encode($data);
+
+		
 
 	}
 }

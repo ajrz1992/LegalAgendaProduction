@@ -104,7 +104,10 @@ if($action == 'delete_task'){
 if($action == 'save_progress'){
 	$save = $crud->save_progress();
 	if($save)
-		echo $save;
+		$response['status'] = 'success';
+		$response['message'] = 'Tarea creada satisfactoriamente';
+		echo json_encode($response);
+		#echo $save;
 }
 if($action == 'delete_progress'){
 	$save = $crud->delete_progress();
