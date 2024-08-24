@@ -32,6 +32,12 @@
             </a>
             <ul class="nav nav-treeview">
             <li class="nav-item">
+                <a href="./index.php?page=progreso" class="nav-link nav-carpetaRaiz">
+                  <i class="right fas fa-angle-right"></i>
+                  <p> Ver Progreso</p>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="./index.php?page=carpetas" class="nav-link nav-carpetaRaiz">
                   <i class="fas fa-folder-minus"></i>
                   <p> Carpeta Raiz</p>
@@ -207,7 +213,7 @@
 				data: { nombre: dato }, // Aquí se pasa la variable "dato" como parte de los datos de la solicitud
 				success: function(response) {
 					console.log('Respuesta del servidor:', response);
-					window.location.href = 'https://demolegalagenda.tecnologiainnovacion.com/index.php?page=task_list';
+					window.location.href = 'http://localhost/LegalAgenda/index.php?page=task_list';
 				},
 				error: function(xhr, status, error) {
 					console.error('Error en la solicitud AJAX:', error);
