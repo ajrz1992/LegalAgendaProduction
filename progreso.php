@@ -12,11 +12,31 @@
             <?php
             $empresa = $_SESSION['login_empresa'];
             $qry = $conn->query("
-                SELECT t.carpeta, t.id, t.task, s.action, s.FechaCalendario 
-                FROM task_list t 
-                INNER JOIN task_progress s ON t.id = s.task_id 
-                WHERE t.empresa='$empresa' 
-                ORDER BY t.carpeta, s.FechaCalendario DESC LIMIT 1
+               SELECT 
+                t.carpeta, 
+                t.id, 
+                t.task, 
+                s.action, 
+                s.FechaCalendario 
+            FROM 
+                task_list t 
+            INNER JOIN 
+                task_progress s ON t.id = s.task_id 
+            INNER JOIN 
+                (
+                    SELECT 
+                        task_id, 
+                        MAX(FechaCalendario) AS last_activity_date 
+                    FROM 
+                        task_progress 
+                    GROUP BY 
+                        task_id
+                ) latest ON s.task_id = latest.task_id AND s.FechaCalendario = latest.last_activity_date 
+            WHERE 
+                t.empresa = '$empresa' 
+            ORDER BY 
+                t.carpeta, 
+                s.FechaCalendario DESC;
             ");
 
             $current_carpeta = '';
