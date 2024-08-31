@@ -1,23 +1,30 @@
 <?php
 session_start();
 include 'db_connect.php';
-$id = $_GET['id'];
 
-// Consulta para obtener el progreso, tarea y detalles del empleado
-$progress = $conn->query("
-    SELECT 
-        p.*, 
-        t.task AS task_title, 
-        CONCAT(u.firstname, ' ', u.lastname) AS uname, 
-        u.avatar, 
-        DATE_FORMAT(p.date_created, '%Y-%m-%d') AS calendar_date 
-    FROM task_progress p 
-    INNER JOIN task_list t ON t.id = p.task_id 
-    INNER JOIN employee_list u ON u.id = t.employee_id 
-    WHERE p.task_id = '$id' 
-    ORDER BY p.date_created ASC
-");
-?>
+if (isset($_GET['ids'])) {
+    $ids = $_GET['ids'];
+    $idArray = explode(',', $ids); // Convertir la cadena de IDs en un array
+
+    // Escapar los IDs para evitar SQL injection
+    $escapedIds = array_map([$conn, 'real_escape_string'], $idArray);
+    $idList = implode(',', $escapedIds);
+
+    // Consulta para obtener el progreso, tarea y detalles del empleado
+    $progress = $conn->query("
+        SELECT 
+            p.*, 
+            t.task AS task_title, 
+            CONCAT(u.firstname, ' ', u.lastname) AS uname, 
+            u.avatar, 
+            DATE_FORMAT(p.date_created, '%Y-%m-%d') AS calendar_date 
+        FROM task_progress p 
+        INNER JOIN task_list t ON t.id = p.task_id 
+        INNER JOIN employee_list u ON u.id = t.employee_id 
+        WHERE p.task_id IN ($idList) 
+        ORDER BY p.date_created ASC
+    ");
+    ?>
 
 <!DOCTYPE html>
 <html lang="es">
@@ -29,6 +36,7 @@ $progress = $conn->query("
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="path/to/bootstrap.js"></script> <!-- Asegúrate de incluir Bootstrap JS si lo usas -->
     <style>
+        /* Estilos del timeline */
         .timeline-container {
             position: relative;
             padding: 20px 0;
@@ -37,7 +45,7 @@ $progress = $conn->query("
         .timeline-line {
             position: absolute;
             left: 0;
-            top: 60%; /* Ajusta este valor para desplazar la línea hacia abajo */
+            top: 60%;
             width: 100%;
             height: 2px;
             background-color: #007bff;
@@ -116,7 +124,7 @@ $progress = $conn->query("
                                     <div class="user-block">
                                         <span class="username">
                                             <a href="#"><?php echo htmlspecialchars(ucwords($row['action'])); ?></a>
-                                            <b><?php echo htmlspecialchars(date('M d, Y', strtotime($row['FechaCalendario']))); ?></b>
+                                            <b><?php echo htmlspecialchars(date('M d, Y', strtotime($row['calendar_date']))); ?></b>
                                             <br><br>
                                         </span>
                                     </div>
@@ -176,116 +184,29 @@ $progress = $conn->query("
   </div>
 </div>
 
-<!-- Modal de Error -->
-<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="modalErrorTitle" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalErrorTitle">Error</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p id="errorMessage">Ha ocurrido un error.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-      </div>
+<!-- Modal para mostrar el progreso -->
+<div class="modal fade" id="progressModal" tabindex="-1" aria-labelledby="progressModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="progressModalLabel">Progreso de Tareas Seleccionadas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="progressContent">
+                <!-- Contenido del progreso cargado por AJAX -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
-
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
-
-<script>
-    $(document).ready(function() {
-        $('#add-action-form').submit(function(e) {
-            e.preventDefault(); // Evita el envío tradicional del formulario
-            $('input').removeClass("border-danger");
-            $('#message-box').html(''); // Limpiar el mensaje actual
-            
-            var formData = new FormData(this);
-
-            $.ajax({
-                url: 'ajax.php?action=save_progress',
-                data: formData,
-                cache: false,
-                contentType: false,
-                processData: false,
-                method: 'POST',
-                dataType: 'json',
-                success: function(data) {
-                    console.log('Respuesta del servidor:', data); // Verifica la estructura de la respuesta
-
-                    if (data.status === 'success') {
-                        $('#modalMessage').text(data.message);
-                        var successModal = new bootstrap.Modal(document.getElementById('successModal'));
-                        successModal.show();
-
-                        // Limpia el formulario
-                        $('#add-action-form')[0].reset();
-                        
-                        // Opcional: reinicia los campos del formulario a sus estados originales
-                        $('input').removeClass("border-danger");
-                        $('#message-box').html(''); 
-
-                        // Actualiza el timeline sin recargar la página
-                        updateTimeline();
-                        
-                    } else {
-                        $('#errorMessage').text(data.message);
-                        var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-                        errorModal.show();
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error en la solicitud AJAX:', xhr.responseText); // Muestra la respuesta del servidor para depuración
-                    $('#errorMessage').text('Error en la solicitud. Por favor, inténtelo de nuevo.');
-                    var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-                    errorModal.show();
-                }
-            });
-        });
-
-            function updateTimeline() {
-                var taskId = <?php echo json_encode($id); ?>;
-
-                $.ajax({
-                    url: 'ajax.php?action=get_progress',
-                    method: 'POST',
-                    data: { id: taskId },
-                    dataType: 'json',
-                    success: function(response) {
-                        console.log('Datos recibidos:', response); // Imprime los datos recibidos en la consola
-                        
-                        // Imprime los datos en una sección del frontend para depuración
-                        $('#debug-output').html('<pre>' + JSON.stringify(response, null, 2) + '</pre>');
-
-                        if (Array.isArray(response)) {
-                            $('.timeline-items').html(response.map(item => 
-                                `<div class="timeline-item">
-                                    <h5>${item.action}</h5>
-                                    <p>${item.FechaCalendario}</p>
-                                </div>`
-                            ).join(''));
-                        } else if (response.status === 'error') {
-                            console.error('Error en la respuesta:', response.message);
-                        } else {
-                            console.error('Respuesta inesperada:', response);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error en la solicitud AJAX:', xhr.responseText);
-                    }
-                });
-            }
-    });
-</script>
-
-
-
 
 </body>
 </html>
+
+<?php
+} else {
+    echo "No se recibieron IDs.";
+}
+?>

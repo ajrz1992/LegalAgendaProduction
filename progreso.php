@@ -1,9 +1,12 @@
-<?php include 'db_connect.php'; ?>
+<?php include 'db_connect.php'; 
+?>
+
+
 <div class="col-lg-12">
     <div class="card card-outline card-success">
         <div class="card-header">
             <div class="card-tools">
-                <a class="btn btn-block btn-sm btn-default btn-flat border-primary" href="./index.php?page=new_task">
+                <a class="btn btn-default btn-sm btn-flat border-info wave-effect text-info view-progress" id="view-selected-progress"  data-toggle="modal" data-target="#progressModal">
                     <i class="fa fa-plus"></i> Comparar Progresos
                 </a>
             </div>
@@ -53,7 +56,7 @@
                 <table class="table table-hover table-bordered" id="list">
                     <thead>
                         <tr>
-                            <th class="text-center"><input type="checkbox" id="select-all"></th>
+                            <th class="text-center"><input type="checkbox" class="select-task" value="<?php echo htmlspecialchars($row['id']) ?>"></th>
                             <th>Tarea</th>
                             <th>Última Actividad</th>
                             <th>Fecha</th>
@@ -102,7 +105,7 @@
     $(document).ready(function() {
         $('#list').dataTable();
 
-        // Select/Deselect all checkboxes
+        // Seleccionar/Desmarcar todas las casillas de verificación
         $('#select-all').click(function() {
             var checked = this.checked;
             $('.select-task').each(function() {
@@ -110,20 +113,60 @@
             });
         });
 
+        // Enviar los IDs seleccionados al servidor
+        $('#view-selected-progress').click(function() {
+            var selectedIds = [];
+            $('.select-task:checked').each(function() {
+                selectedIds.push($(this).val());
+            });
+
+            if (selectedIds.length > 0) {
+                var idsString = selectedIds.join(','); // Convertir el array de IDs en una cadena separada por comas
+
+                // Imprimir los IDs concatenados en la consola
+                console.log('IDs seleccionados: ' + idsString);
+
+                $.ajax({
+                    url: 'view_progress.php',
+                    method: 'GET',
+                    data: { ids: idsString },
+                    success: function(response) {
+                        $('#progressContent').html(response);
+                        $('#progressModal').modal('show'); // Asegúrate de que el modal se muestre después de cargar el contenido
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error al cargar el progreso:', error);
+                    }
+                });
+            } else {
+                alert('Por favor, selecciona al menos una tarea.');
+            }
+        });
+
         // Cargar el contenido del progreso en el modal
-        $('.view-progress').click(function(){
-            var id = $(this).attr('data-id');
+        $('.view-progress').click(function() {
+            var id = $(this).data('id'); // Usar .data('id') para acceder al atributo data-id
+
+            // Imprimir el ID en la consola
+            console.log('ID seleccionado: ' + id);
+
             $.ajax({
                 url: 'view_progress.php',
                 method: 'GET',
                 data: { id: id },
                 success: function(response) {
                     $('#progressContent').html(response);
+                    $('#progressModal').modal('show'); // Asegúrate de que el modal se muestre después de cargar el contenido
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al cargar el progreso:', error);
                 }
             });
         });
     });
 </script>
+
+
 
 <style>
     .modal-lg {
