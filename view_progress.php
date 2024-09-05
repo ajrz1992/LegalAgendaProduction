@@ -142,29 +142,32 @@ if (isset($_GET['id'])) {
                 </div> <!-- Cerrar el div de los ítems de la línea de tiempo -->
             </div>
         </div>
-        
-        <!-- Formulario para añadir nueva acción -->
-        <div class="mt-4">
-            <h5>Añadir Nueva Acción</h5>
-            <form id="add-action-form">
-                <div class="form-group">
-                    <label for="action">Nombre de Acción</label>
-                    <input type="text" class="form-control" id="action" name="action" required>
-                </div>
-                <div class="form-group">
-                    <label for="FechaCalendario">Fecha</label>
-                    <input type="date" class="form-control" id="FechaCalendario" name="FechaCalendario" required>
-                </div>
-                <div class="form-group">
-                    <label for="PlazoLegal">Plazo Legal</label>
-                    <input type="date" class="form-control" id="PlazoLegal" name="PlazoLegal">
-                </div>
-                <input type="hidden" name="task_id" value="<?php echo htmlspecialchars($id); ?>">
-                <button type="submit" class="btn btn-primary">Añadir Acción</button>
-            </form>
-            <div id="message-box" style="margin-top: 10px; font-weight: bold;"></div>
+        <?php if (count($idArray) === 1): ?> <!-- Mostrar el formulario solo si hay un ID -->
+            <!-- Formulario para añadir nueva acción -->
+            <div class="mt-4">
+                <h5>Añadir Nueva Acción</h5>
+                <form id="add-action-form">
+                    <div class="form-group">
+                        <label for="action">Nombre de Acción</label>
+                        <input type="text" class="form-control" id="action" name="action" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="FechaCalendario">Fecha</label>
+                        <input type="date" class="form-control" id="FechaCalendario" name="FechaCalendario" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="PlazoLegal">Plazo Legal</label>
+                        <input type="date" class="form-control" id="PlazoLegal" name="PlazoLegal">
+                    </div>
+                    <input type="hidden" name="task_id" value="<?php echo htmlspecialchars($id); ?>">
+                    <button type="submit" class="btn btn-primary">Añadir Acción</button>
+                </form>
+                <div id="message-box" style="margin-top: 10px; font-weight: bold;"></div>
+            </div>
         </div>
-    </div>
+        <?php else: ?>
+            <p>A continuación se presenta la consolidación de tareas seleccionadas.</p>
+        <?php endif; ?>
 
 <!-- Modal -->
 <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
