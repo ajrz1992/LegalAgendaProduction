@@ -2,7 +2,7 @@
 session_start();
 include 'db_connect.php';
 
-if (isset($_GET['id'])) {
+if (isset($_GET['id']) && !empty($_GET['id'])) {
     $ids = $_GET['id'];
     $idArray = explode(',', $ids); // Convertir la cadena de IDs en un array
 
@@ -15,6 +15,7 @@ if (isset($_GET['id'])) {
         SELECT 
             p.*, 
             t.task AS task_title, 
+            t.id AS task_id, 
             CONCAT(u.firstname, ' ', u.lastname) AS uname, 
             u.avatar, 
             DATE_FORMAT(p.date_created, '%Y-%m-%d') AS calendar_date 
@@ -22,8 +23,16 @@ if (isset($_GET['id'])) {
         INNER JOIN task_list t ON t.id = p.task_id 
         INNER JOIN employee_list u ON u.id = t.employee_id 
         WHERE p.task_id IN ($idList) 
-        ORDER BY p.date_created ASC
+        ORDER BY p.task_id, p.date_created ASC
     ");
+
+    // Arreglo para agrupar las tareas por ID
+    $tasks = [];
+    if ($progress->num_rows > 0) {
+        while ($row = $progress->fetch_assoc()) {
+            $tasks[$row['task_id']][] = $row; // Agrupar por task_id
+        }
+    }
     ?>
 
 <!DOCTYPE html>
@@ -114,60 +123,63 @@ if (isset($_GET['id'])) {
 <body>
     <div class="container-fluid">
         <div id="post-field">
-            <div class="timeline-container">
-                <div class="timeline-line"></div>
-                <div class="timeline-items">
-                    <?php if ($progress->num_rows > 0): ?>
-                        <?php while($row = $progress->fetch_assoc()): ?>
-                            <div class="timeline-item">
-                                <div class="timeline-item-content">
-                                    <div class="user-block">
-                                        <span class="username">
-                                            <a href="#"><?php echo htmlspecialchars(ucwords($row['action'])); ?></a>
-                                            <b><?php echo htmlspecialchars(date('M d, Y', strtotime($row['calendar_date']))); ?></b>
-                                            <br><br>
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <?php echo htmlspecialchars($row['progress']); ?>
+            <?php if (!empty($tasks)): ?>
+                <?php foreach ($tasks as $taskId => $taskProgress): ?>
+                    <h4><?php echo htmlspecialchars($taskProgress[0]['task_title']); ?></h3> <!-- Mostrar el título de la tarea -->
+                    <div class="timeline-container">
+                        <div class="timeline-line"></div>
+                        <div class="timeline-items">
+                            <?php foreach ($taskProgress as $row): ?>
+                                <div class="timeline-item">
+                                    <div class="timeline-item-content">
+                                        <div class="user-block">
+                                            <span class="username">
+                                                <a href="#"><?php echo htmlspecialchars(ucwords($row['action'])); ?></a>
+                                                <b><?php echo htmlspecialchars(date('M d, Y', strtotime($row['calendar_date']))); ?></b>
+                                                <br><br>
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <?php echo htmlspecialchars($row['progress']); ?>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        <?php endwhile; ?>
-                    <?php else: ?>
-                        <div class="mb-2">
-                            <center><i>Ningún progreso reportado aún</i></center>
-                        </div>
-                    <?php endif; ?>
-                </div> <!-- Cerrar el div de los ítems de la línea de tiempo -->
-            </div>
+                            <?php endforeach; ?>
+                        </div> <!-- Cerrar el div de los ítems de la línea de tiempo -->
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="mb-2">
+                    <center><i>Ningún progreso reportado aún</i></center>
+                </div>
+            <?php endif; ?>
         </div>
-        <?php if (count($idArray) === 1): ?> <!-- Mostrar el formulario solo si hay un ID -->
-            <!-- Formulario para añadir nueva acción -->
-            <div class="mt-4">
-                <h5>Añadir Nueva Acción</h5>
-                <form id="add-action-form">
-                    <div class="form-group">
-                        <label for="action">Nombre de Acción</label>
-                        <input type="text" class="form-control" id="action" name="action" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="FechaCalendario">Fecha</label>
-                        <input type="date" class="form-control" id="FechaCalendario" name="FechaCalendario" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="PlazoLegal">Plazo Legal</label>
-                        <input type="date" class="form-control" id="PlazoLegal" name="PlazoLegal">
-                    </div>
-                    <input type="hidden" name="task_id" value="<?php echo htmlspecialchars($id); ?>">
-                    <button type="submit" class="btn btn-primary">Añadir Acción</button>
-                </form>
-                <div id="message-box" style="margin-top: 10px; font-weight: bold;"></div>
-            </div>
+    </div>
+
+    <?php if (count($idArray) === 1): ?> <!-- Mostrar el formulario solo si hay un ID -->
+        <div class="mt-4">
+            <h5>Añadir Nueva Acción</h5>
+            <form id="add-action-form">
+                <div class="form-group">
+                    <label for="action">Nombre de Acción</label>
+                    <input type="text" class="form-control" id="action" name="action" required>
+                </div>
+                <div class="form-group">
+                    <label for="FechaCalendario">Fecha</label>
+                    <input type="date" class="form-control" id="FechaCalendario" name="FechaCalendario" required>
+                </div>
+                <div class="form-group">
+                    <label for="PlazoLegal">Plazo Legal</label>
+                    <input type="date" class="form-control" id="PlazoLegal" name="PlazoLegal">
+                </div>
+                <input type="hidden" name="task_id" value="<?php echo htmlspecialchars($id); ?>">
+                <button type="submit" class="btn btn-primary">Añadir Acción</button>
+            </form>
+            <div id="message-box" style="margin-top: 10px; font-weight: bold;"></div>
         </div>
-        <?php else: ?>
-            <p>A continuación se presenta la consolidación de tareas seleccionadas.</p>
-        <?php endif; ?>
+    <?php else: ?>
+        <p>A continuación se presenta la consolidación de tareas seleccionadas.</p>
+    <?php endif; ?>
 
 <!-- Modal -->
 <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
@@ -185,24 +197,6 @@ if (isset($_GET['id'])) {
       </div>
     </div>
   </div>
-</div>
-
-<!-- Modal para mostrar el progreso -->
-<div class="modal fade" id="progressModal" tabindex="-1" aria-labelledby="progressModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="progressModalLabel">Progreso de Tareas Seleccionadas</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="progressContent">
-                <!-- Contenido del progreso cargado por AJAX -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            </div>
-        </div>
-    </div>
 </div>
 
 </body>
