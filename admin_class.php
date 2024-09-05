@@ -625,22 +625,72 @@ Class Action {
 	#	return json_encode($data);
 	#}
 
-	function get_progress($task_id) {
-		
-		$task_id = isset($_POST['id']) ? $_POST['id'] : null;
-		$get = $this->db->query("SELECT p.*,  t.task AS task_title, CONCAT(u.firstname, ' ', u.lastname) AS uname, u.avatar, DATE_FORMAT(p.date_created, '%Y-%m-%d') AS calendar_date FROM task_progress p INNER JOIN task_list t ON t.id = p.task_id INNER JOIN employee_list u ON u.id = t.employee_id WHERE p.task_id = '$task_id' ORDER BY p.date_created ASC ");
+	#Josue
+	#function get_progress($task_id) {
+	#	
+	#	$task_id = isset($_POST['id']) ? $_POST['id'] : null;
+	#	$get = $this->db->query("SELECT p.*,  t.task AS task_title, CONCAT(u.firstname, ' ', u.lastname) AS uname, u.avatar, DATE_FORMAT(p.date_created, '%Y-%m-%d') AS calendar_date FROM task_progress p INNER JOIN task_list t ON t.id = p.task_id INNER JOIN employee_list u ON u.id = t.employee_id WHERE p.task_id = '$task_id' ORDER BY p.date_created ASC ");
+	#	$data = array();
+	#
+	#	// Itera sobre los resultados de la consulta
+	#	while ($row = $get->fetch_assoc()) {
+	#		// Procesa los datos de cada fila
+	#		$row['action'] = ucwords($row['action']); // Capitaliza el nombre del usuario
+	#		$row['FechaCalendario'] = date("M d, Y", strtotime($row['FechaCalendario'])); // Formatea la fecha
+	#		$data[] = $row; // Añade la fila al array de resultados
+	#	}
+	#	// Devuelve los datos en formato JSON
+	#	return json_encode($data);
+	#}
+
+	public function get_progress($taskIDs) {
 		$data = array();
+		try {
+			// Asegúrate de que $taskIDs esté correctamente formateado como una cadena separada por comas
+			$taskIDs = $this->db->real_escape_string($taskIDs); // Protege contra inyecciones SQL
+			
+			// Construye la consulta SQL
+			$query = "SELECT 
+						  p.action,
+						  p.FechaCalendario
+					  FROM 
+						  task_progress p 
+					  INNER JOIN 
+						  task_list t ON t.id = p.task_id 
+					  INNER JOIN 
+						  employee_list u ON u.id = t.employee_id 
+					  WHERE  
+						  p.task_id IN ($taskIDs) 
+					  ORDER BY 
+						  p.date_created ASC";
+			
+			// Ejecuta la consulta
+			$qry = $this->db->query($query);
 	
-		// Itera sobre los resultados de la consulta
-		while ($row = $get->fetch_assoc()) {
-			// Procesa los datos de cada fila
-			$row['action'] = ucwords($row['action']); // Capitaliza el nombre del usuario
-			$row['FechaCalendario'] = date("M d, Y", strtotime($row['FechaCalendario'])); // Formatea la fecha
-			$data[] = $row; // Añade la fila al array de resultados
+			// Verifica si la consulta fue exitosa
+			if (!$qry) {
+				throw new Exception('Query failed: ' . $this->db->error);
+			}
+	
+			// Procesa los resultados
+			while ($row = $qry->fetch_assoc()) {
+				$row['action'] = ucwords($row['action']); // Capitaliza el nombre del usuario
+				$row['FechaCalendario'] = date("M d, Y", strtotime($row['FechaCalendario'])); // Formatea la fecha
+				$data[] = $row;
+			}
+		} catch (Exception $e) {
+			// Captura el error y lo guarda en el log de errores
+			error_log('Error: ' . $e->getMessage()); // Guarda el error en el log de errores de PHP
+			$data = ['error' => 'An error occurred: ' . $e->getMessage()];
 		}
-		// Devuelve los datos en formato JSON
+	
+		// Retorna el resultado en formato JSON
 		return json_encode($data);
 	}
+	
+	
+	
+
 	function get_report($task_id){
 		extract($_POST);
 		$data = array();

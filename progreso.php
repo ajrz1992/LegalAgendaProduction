@@ -129,7 +129,7 @@
                 $.ajax({
                     url: 'view_progress.php',
                     method: 'GET',
-                    data: { ids: idsString },
+                    data: { id: idsString },
                     success: function(response) {
                         $('#progressContent').html(response);
                         $('#progressModal').modal('show'); // Asegúrate de que el modal se muestre después de cargar el contenido

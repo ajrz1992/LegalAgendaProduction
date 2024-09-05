@@ -2,8 +2,8 @@
 session_start();
 include 'db_connect.php';
 
-if (isset($_GET['ids'])) {
-    $ids = $_GET['ids'];
+if (isset($_GET['id'])) {
+    $ids = $_GET['id'];
     $idArray = explode(',', $ids); // Convertir la cadena de IDs en un array
 
     // Escapar los IDs para evitar SQL injection
