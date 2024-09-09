@@ -135,7 +135,7 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
                                         <div class="user-block">
                                             <span class="username">
                                                 <a href="#"><?php echo htmlspecialchars(ucwords($row['action'])); ?></a>
-                                                <b><?php echo htmlspecialchars(date('M d, Y', strtotime($row['calendar_date']))); ?></b>
+                                                <b><?php echo htmlspecialchars(date('M d, Y', strtotime($row['FechaCalendario']))); ?></b>
                                                 <br><br>
                                             </span>
                                         </div>
@@ -172,7 +172,7 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
                     <label for="PlazoLegal">Plazo Legal</label>
                     <input type="date" class="form-control" id="PlazoLegal" name="PlazoLegal">
                 </div>
-                <input type="hidden" name="task_id" value="<?php echo htmlspecialchars($id); ?>">
+                <input type="hidden" name="task_id" value="<?php echo htmlspecialchars($ids); ?>">
                 <button type="submit" class="btn btn-primary">Añadir Acción</button>
             </form>
             <div id="message-box" style="margin-top: 10px; font-weight: bold;"></div>
@@ -198,6 +198,116 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
     </div>
   </div>
 </div>
+
+<!-- Modal de Error -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="modalErrorTitle" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalErrorTitle">Error</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="errorMessage">Ha ocurrido un error.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#add-action-form').submit(function(e) {
+            e.preventDefault(); // Evita el envío tradicional del formulario
+            $('input').removeClass("border-danger");
+            $('#message-box').html(''); // Limpiar el mensaje actual
+
+            var formData = new FormData(this);
+
+            $.ajax({
+                url: 'ajax.php?action=save_progress',
+                data: formData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                method: 'POST',
+                dataType: 'json',
+                success: function(data) {
+                    console.log('Respuesta del servidor:', data); // Verifica la estructura de la respuesta
+
+                    if (data.status === 'success') {
+                        $('#modalMessage').text(data.message);
+                        var successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                        successModal.show();
+
+                        // Limpia el formulario
+                        $('#add-action-form')[0].reset();
+
+                        // Opcional: reinicia los campos del formulario a sus estados originales
+                        $('input').removeClass("border-danger");
+                        $('#message-box').html(''); 
+
+                        // Actualiza el timeline sin recargar la página
+                        updateTimeline();
+
+                    } else {
+                        $('#errorMessage').text(data.message);
+                        var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                        errorModal.show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error en la solicitud AJAX:', xhr.responseText); // Muestra la respuesta del servidor para depuración
+                    $('#errorMessage').text('Error en la solicitud. Por favor, inténtelo de nuevo.');
+                    var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                    errorModal.show();
+                }
+            });
+        });
+
+            function updateTimeline() {
+                var taskId = <?php echo json_encode($ids); ?>;
+
+                $.ajax({
+                    url: 'ajax.php?action=get_progress',
+                    method: 'POST',
+                    data: { id: taskId },
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('Datos recibidos:', response); // Imprime los datos recibidos en la consola
+
+                        // Imprime los datos en una sección del frontend para depuración
+                        $('#debug-output').html('<pre>' + JSON.stringify(response, null, 2) + '</pre>');
+
+                        if (Array.isArray(response)) {
+                            $('.timeline-items').html(response.map(item => 
+                                `<div class="timeline-item">
+                                    <h5>${item.action}</h5>
+                                    <p>${item.FechaCalendario}</p>
+                                </div>`
+                            ).join(''));
+                        } else if (response.status === 'error') {
+                            console.error('Error en la respuesta:', response.message);
+                        } else {
+                            console.error('Respuesta inesperada:', response);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error en la solicitud AJAX:', xhr.responseText);
+                    }
+                });
+            }
+    });
+</script>
+
+
 
 </body>
 </html>
