@@ -3,9 +3,14 @@ session_start();
 include 'db_connect.php';
 
 if (isset($_GET['id']) && !empty($_GET['id'])) {
-    $ids = $_GET['id'];
-    $idArray = explode(',', $ids); // Convertir la cadena de IDs en un array
+    $_SESSION['id'] = $_GET['id'];
+}
 
+if (isset($_SESSION['id']) && !empty($_SESSION['id'])) {
+    
+    $ids = $_SESSION['id'];
+    $idArray = explode(',', $ids); // Convertir la cadena de IDs en un array
+    
     // Escapar los IDs para evitar SQL injection
     $escapedIds = array_map([$conn, 'real_escape_string'], $idArray);
     $idList = implode(',', $escapedIds);
@@ -41,9 +46,10 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Progreso de Tareas</title>
-    <link rel="stylesheet" href="path/to/bootstrap.css"> <!-- Asegúrate de incluir Bootstrap si lo usas -->
+    <link rel="stylesheet" > <!-- Asegúrate de incluir Bootstrap si lo usas -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="path/to/bootstrap.js"></script> <!-- Asegúrate de incluir Bootstrap JS si lo usas -->
+
+    
     <style>
         /* Estilos del timeline */
         .timeline-container {
@@ -218,9 +224,6 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
 </div>
 
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
 
 <script>
     $(document).ready(function() {
@@ -257,7 +260,7 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
                         // Actualiza el timeline sin recargar la página
                         updateTimeline();
 
-                         // Recarga la página después de 3 segundos
+                         // Recarga la página después de 1 segundos
                          setTimeout(function() {
                             location.reload();
                         }, 1000);
@@ -276,8 +279,9 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
                 }
             });
         });
+                 
 
-            function updateTimeline() {
+        function updateTimeline() {
                 var taskId = <?php echo json_encode($ids); ?>;
 
                 $.ajax({
@@ -319,6 +323,6 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
 
 <?php
 } else {
-    echo "No se recibieron IDs.";
+    echo "Seleccione al menos dos Tareas a Comparar.";
 }
 ?>
