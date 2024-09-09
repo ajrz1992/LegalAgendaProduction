@@ -257,6 +257,11 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
                         // Actualiza el timeline sin recargar la página
                         updateTimeline();
 
+                         // Recarga la página después de 3 segundos
+                         setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+
                     } else {
                         $('#errorMessage').text(data.message);
                         var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
