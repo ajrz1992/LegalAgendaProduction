@@ -40,14 +40,15 @@
               <i class="fas fa-lock"></i>
               <input type="password" class="form-control" name="password" required placeholder="Contraseña">
             </div>
-            <!-- <div class="input-field">
+            <div class="input-field">
               <i class="fas fa-users"></i>
               <select id="" name="login" class="select-transparente">
                 <option selected disabled>Ingresar como</option>
-                <option value="1">Empleado</option>
+                <option value="0">Empleado</option>
+                <option value="1">Evaluador</option>
                 <option value="2">Administrador</option>
             </select>
-            </div> -->
+            </div>
 
             <input type="submit" value="Ingresar" class="btn solid" />
             <p class="social-text" style="display:none;">>Or Sign in with social platforms</p>
@@ -70,7 +71,7 @@
             <h2 class="title">Ingresa tus datos</h2>
             <div class="input-field">
               <i class="fas fa-building"></i>
-              <input type="text" id="empresa" name="empresa" placeholder="Nombre de la Empresa o Bufete"/>
+              <input type="text" id="empresa" name="empresa" placeholder="Nombre de la Empresa" required/>
             </div>
             <div class="input-field">
               <i class="fas fa-user-circle"></i>
@@ -238,10 +239,6 @@
         });
         
         $('#manage_user').submit(function(e){
-     if ($('#empresa').val() === "") {
-  $('#empresa').val("Abog. " +  $("#firstname").val() + " " +  $("#lastname").val());
-}
-
 		e.preventDefault()
 		$('input').removeClass("border-danger")
 		start_load()
@@ -255,7 +252,6 @@
 				}
 			}
 		}
-  
 		$.ajax({
 			url:'ajax.php?action=save_user',
 			data: new FormData($(this)[0]),
@@ -265,17 +261,15 @@
 		    method: 'POST',
 		    type: 'POST',
 			success:function(resp){
+				if(resp == 1){
 					Swal.fire({
           position: "center",
-            icon: "success",
+            icon: "error",
             title: "¡Datos de la empresa guardados exitosamente!",
           showConfirmButton: false,
-          timer: 1500,
-        }).then(() => {
-  // Recarga la página una vez que el temporizador termina
-  location.reload();
-});
-        if(resp == 2){
+          timer: 1500
+        });
+				}else if(resp == 2){
           Swal.fire({
           position: "center",
             icon: "error",
