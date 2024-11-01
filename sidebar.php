@@ -213,7 +213,7 @@
 				data: { nombre: dato }, // Aquí se pasa la variable "dato" como parte de los datos de la solicitud
 				success: function(response) {
 					console.log('Respuesta del servidor:', response);
-					window.location.href = 'http://localhost/LegalAgenda/index.php?page=task_list';
+					window.location.href = 'https://demolegalagenda.tecnologiainnovacion.com/index.php?page=task_list';
 				},
 				error: function(xhr, status, error) {
 					console.error('Error en la solicitud AJAX:', error);
