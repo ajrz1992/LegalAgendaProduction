@@ -104,7 +104,9 @@ if($action == 'delete_task'){
 if($action == 'save_progress'){
 	$save = $crud->save_progress();
 	if($save)
-		echo $save;
+		$response['status'] = 'success';
+		$response['message'] = 'Tarea creada satisfactoriamente';
+		echo json_encode($response);
 }
 if($action == 'delete_progress'){
 	$save = $crud->delete_progress();
@@ -126,11 +128,41 @@ if($action == 'get_emp_tasks'){
 	if($get)
 		echo $get;
 }
-if($action == 'get_progress'){
-	$get = $crud->get_progress();
-	if($get)
-		echo $get;
+#if($action == 'get_progress'){
+#	$get = $crud->get_progress($task_id);
+#	if($get)
+#		echo json_encode($response);
+#}
+#Action que ocurrre cuando se inserta una subtarea nueva, y en comparar progresos.
+if ($action == 'get_progress') {
+    // Verifica si 'ids' está en $_POST y es un array
+    if (isset($_POST['id']) && is_array($_POST['id'])) {
+        $task_ids = $_POST['id'];
+        
+        // Verifica si el array no está vacío
+        if (count($task_ids) > 0) {
+            // Convierte el array a una cadena separada por comas
+            $task_ids_str = implode(",", array_map('intval', $task_ids)); // Asegúrate de que los IDs sean enteros
+            
+            // Obtén el progreso usando la función del CRUD
+            $get = $crud->get_progress($task_ids_str);
+            
+            // Devuelve los datos en formato JSON
+            if ($get) {
+                echo json_encode($get);
+            } else {
+                echo json_encode(['error' => 'No progress found']);
+            }
+        } else {
+            echo json_encode(['error' => 'No tasks selected']);
+        }
+    } else {
+        echo json_encode(['error' => 'Invalid task IDs']);
+    }
 }
+
+
+
 if($action == 'get_report'){
 	$get = $crud->get_report();
 	if($get)

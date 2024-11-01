@@ -21,31 +21,19 @@ Class Action {
 
 	function login(){
 		extract($_POST);
-		//$type1 = array("employee_list","users");
-		$qry2 = $this->db->query("SELECT *,concat(firstname,' ') as name FROM users where email = '".$email."' and password = '".md5($password)."'  ");
-		if($qry2->num_rows > 0){
-			foreach ($qry2->fetch_array() as $key => $value) {
-				if($key != 'password' && !is_numeric($key))
-					$_SESSION['login_'.$key] = $value;
-			}
-					$_SESSION['login_type'] = 2;
-				return 1;
-		}else{
-			$qry = $this->db->query("SELECT *,concat(firstname,' ',lastname) as name FROM employee_list where email = '".$email."' and password = '".md5($password)."'  ");
-			if($qry->num_rows > 0){
+		$type = array("employee_list","evaluator_list","users");
+		// $qry = $this->db->query("SELECT *,concat(firstname,' ',lastname) as name FROM {$type[$login]} where email = '".$email."' and password = '".md5($password)."'  ");
+			$qry = $this->db->query("SELECT *,concat(firstname,' ') as name FROM {$type[$login]} where email = '".$email."' and password = '".md5($password)."'  ");
+		if($qry->num_rows > 0){
 			foreach ($qry->fetch_array() as $key => $value) {
 				if($key != 'password' && !is_numeric($key))
 					$_SESSION['login_'.$key] = $value;
 			}
-					$_SESSION['login_type'] = 1;
+					$_SESSION['login_type'] = $login;
 				return 1;
 		}else{
 			return 2;
 		}
-		}
-
-		
-
 	}
 	function logout(){
 		session_destroy();
@@ -99,9 +87,6 @@ Class Action {
 			$data .= ", avatar = 'no-image-available.png' ";
 		}
 			$save = $this->db->query("INSERT INTO users set $data");
-			if($save){
-			return 1;
-		}
 			$mail = new PHPMailer(true); // Lanza excepciones en caso de error
 			try {
 				// Configuración del servidor SMTP
@@ -160,7 +145,9 @@ Class Action {
 				echo 'Error al enviar el correo: ', $mail->ErrorInfo;
 			}
 		}
-		
+		if($save){
+			return 1;
+		}
 	}
 	function signup(){
 		extract($_POST);
@@ -561,6 +548,8 @@ Class Action {
 			$data .= ", is_complete=0 ";
 		if(empty($id)){
 			$save = $this->db->query("INSERT INTO task_progress set $data");
+			return array('status' => 'success', 'message' => 'Tarea creada satisfactoriamente');
+			
 		}else{
 			$save = $this->db->query("UPDATE task_progress set $data where id = $id");
 		}
@@ -623,19 +612,86 @@ Class Action {
 		}
 		return json_encode($data);
 	}
-	function get_progress(){
-		extract($_POST);
-		$get = $this->db->query("SELECT p.*,concat(u.firstname,' ',u.lastname) as uname,u.avatar FROM task_progress p inner join task_list t on t.id = p.task_id inner join employee_list u on u.id = t.employee_id where p.task_id = $task_id order by unix_timestamp(p.date_created) desc ");
+	#function get_progress(){
+	#	extract($_POST);
+	#	$get = $this->db->query("SELECT p.*,concat(u.firstname,' ',u.lastname) as uname,u.avatar FROM task_progress p inner join task_list t on t.id = p.task_id inner join employee_list u on u.id = t.employee_id where p.task_id = $task_id order by unix_timestamp(p.date_created) desc ");
+	#	$data = array();
+	#	while($row=$get->fetch_assoc()){
+	#		$row['uname'] = ucwords($row['uname']);
+	#		$row['progress'] = html_entity_decode($row['progress']);
+	#		$row['date_created'] = date("M d, Y",strtotime($row['date_created']));
+	#		$data[] = $row;
+	#	}
+	#	return json_encode($data);
+	#}
+
+	#Josue
+	#function get_progress($task_id) {
+	#	
+	#	$task_id = isset($_POST['id']) ? $_POST['id'] : null;
+	#	$get = $this->db->query("SELECT p.*,  t.task AS task_title, CONCAT(u.firstname, ' ', u.lastname) AS uname, u.avatar, DATE_FORMAT(p.date_created, '%Y-%m-%d') AS calendar_date FROM task_progress p INNER JOIN task_list t ON t.id = p.task_id INNER JOIN employee_list u ON u.id = t.employee_id WHERE p.task_id = '$task_id' ORDER BY p.date_created ASC ");
+	#	$data = array();
+	#
+	#	// Itera sobre los resultados de la consulta
+	#	while ($row = $get->fetch_assoc()) {
+	#		// Procesa los datos de cada fila
+	#		$row['action'] = ucwords($row['action']); // Capitaliza el nombre del usuario
+	#		$row['FechaCalendario'] = date("M d, Y", strtotime($row['FechaCalendario'])); // Formatea la fecha
+	#		$data[] = $row; // Añade la fila al array de resultados
+	#	}
+	#	// Devuelve los datos en formato JSON
+	#	return json_encode($data);
+	#}
+
+	public function get_progress($taskIDs) {
 		$data = array();
-		while($row=$get->fetch_assoc()){
-			$row['uname'] = ucwords($row['uname']);
-			$row['progress'] = html_entity_decode($row['progress']);
-			$row['date_created'] = date("M d, Y",strtotime($row['date_created']));
-			$data[] = $row;
+		try {
+			// Asegúrate de que $taskIDs esté correctamente formateado como una cadena separada por comas
+			$taskIDs = $this->db->real_escape_string($taskIDs); // Protege contra inyecciones SQL
+			
+			// Construye la consulta SQL
+			$query = "SELECT 
+						  p.action,
+						  p.FechaCalendario
+					  FROM 
+						  task_progress p 
+					  INNER JOIN 
+						  task_list t ON t.id = p.task_id 
+					  INNER JOIN 
+						  employee_list u ON u.id = t.employee_id 
+					  WHERE  
+						  p.task_id IN ($taskIDs) 
+					  ORDER BY 
+						  p.date_created ASC";
+			
+			// Ejecuta la consulta
+			$qry = $this->db->query($query);
+	
+			// Verifica si la consulta fue exitosa
+			if (!$qry) {
+				throw new Exception('Query failed: ' . $this->db->error);
+			}
+	
+			// Procesa los resultados
+			while ($row = $qry->fetch_assoc()) {
+				$row['action'] = ucwords($row['action']); // Capitaliza el nombre del usuario
+				$row['FechaCalendario'] = date("M d, Y", strtotime($row['FechaCalendario'])); // Formatea la fecha
+				$data[] = $row;
+			}
+		} catch (Exception $e) {
+			// Captura el error y lo guarda en el log de errores
+			error_log('Error: ' . $e->getMessage()); // Guarda el error en el log de errores de PHP
+			$data = ['error' => 'An error occurred: ' . $e->getMessage()];
 		}
+	
+		// Retorna el resultado en formato JSON
 		return json_encode($data);
 	}
-	function get_report(){
+	
+	
+	
+
+	function get_report($task_id){
 		extract($_POST);
 		$data = array();
 		$get = $this->db->query("SELECT t.*,p.name as ticket_for FROM ticket_list t inner join pricing p on p.id = t.pricing_id where date(t.date_created) between '$date_from' and '$date_to' order by unix_timestamp(t.date_created) desc ");
@@ -648,6 +704,8 @@ Class Action {
 			$data[]=$row;
 		}
 		return json_encode($data);
+
+		
 
 	}
 }
