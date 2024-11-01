@@ -26,7 +26,7 @@ if (isset($_SESSION['id']) && !empty($_SESSION['id'])) {
             DATE_FORMAT(p.date_created, '%Y-%m-%d') AS calendar_date 
         FROM task_progress p 
         INNER JOIN task_list t ON t.id = p.task_id 
-        INNER JOIN employee_list u ON u.id = t.employee_id 
+        LEFT JOIN employee_list u ON u.id = t.employee_id 
         WHERE p.task_id IN ($idList) 
         ORDER BY p.task_id, p.date_created ASC
     ");
