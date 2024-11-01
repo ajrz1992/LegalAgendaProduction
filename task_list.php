@@ -49,15 +49,12 @@
 		<div class="row tarealist">
 			<?php
 				$i = 1;
-				
-				if($_SESSION['login_type'] == 1){
-				$qry = $conn->query("SELECT * FROM task_list WHERE empresa='{$_SESSION['login_empresa']}' AND seleccionado=1 AND employee_id='{$_SESSION['login_id']}'");
-				}elseif($_SESSION['login_type'] == 2){
-					$qry = $conn->query("SELECT * FROM task_list WHERE empresa='{$_SESSION['login_empresa']}' AND seleccionado=1");
-				}
-					
-				//$qry = $conn->query("SELECT Distinct t.*,concat(e.lastname,', ',e.firstname,' ',e.middlename) as name FROM task_list t 
-				//inner join employee_list e on e.empresa = t.empresa $where order by unix_timestamp(t.date_created) ASC");
+				$where = " where t.empresa='{$_SESSION['login_empresa']}' and t.seleccionado=1";
+				if($_SESSION['login_type'] == 0)
+					$where = " where t.employee_id = '{$_SESSION['login_id']}' and t.empresa='{$_SESSION['login_empresa']}'";
+				elseif($_SESSION['login_type'] == 1)
+					$where = " where e.evaluator_id = {$_SESSION['login_id']} and e.empresa='{$_SESSION['login_empresa']}'";
+				$qry = $conn->query("SELECT t.*,concat(e.lastname,', ',e.firstname,' ',e.middlename) as name FROM task_list t inner join employee_list e on e.empresa = t.empresa $where order by unix_timestamp(t.date_created) asc");
 				while($row= $qry->fetch_assoc()):
 					$trans = get_html_translation_table(HTML_ENTITIES,ENT_QUOTES);
 					unset($trans["\""], $trans["<"], $trans[">"], $trans["<h2"]);
@@ -79,7 +76,7 @@
 									<a class="dropdown-item mover" data-id="<?php echo $row['id'] ?>"><i class="fa fa-hand-rock-o"></i> Mover a...</a>
 									<div class="dropdown-divider"></div>
 									<?php if($_SESSION['login_type'] == 2): ?>
-									<a class="dropdown-item manage_task" name="<?php echo $row['id'] ?>" href="javascript:void(0)" data-id="<?php echo $row['id'] ?>"><i class="fa-regular fa-pen-to-square"></i>  Editar</a>
+									<a class="dropdown-item" onClick="manage_task(this)" name="<?php echo $row['id'] ?>" href="javascript:void(0)" data-id="<?php echo $row['id'] ?>"><i class="fa-regular fa-pen-to-square"></i>  Editar</a>
 									<div class="dropdown-divider"></div>
 									<?php endif; ?>
 									<?php if($_SESSION['login_type'] == 0): ?>
@@ -97,29 +94,8 @@
     <h5 class="card-title"><b>Tarea: </b><?php echo ucwords($row['task']) ?></h5>
     <br>
 								<p class="card-text"><b>Nombre del Cliente: </b><?php echo ucwords($row['cliente']) ?></p>
-								<p class="card-text"><b>Fecha de Creación: </b>
-									<?php
-										$originalDate = $row['date_created'];
-										// Crear un objeto DateTime a partir de la fecha original
-										$dateTime = new DateTime($originalDate, new DateTimeZone('UTC')); // Asume que la fecha está en UTC
-										// Cambiar la zona horaria al horario de Honduras
-										$dateTime->setTimezone(new DateTimeZone('America/Tegucigalpa'));
-
-										// Establecer la localización en español
-										setlocale(LC_TIME, 'es_ES.UTF-8');
-
-										// Obtener la fecha formateada con strftime()
-										$fechaFormateada = strftime("%d de %B de %Y", $dateTime->getTimestamp());
-
-										// Obtener AM o PM y convertirlo a formato en español
-										
-
-										// Mostrar la fecha con la hora en español
-										echo $fechaFormateada . ' ' . $am_pm_es;
-										?>
-
-									</p>
-								<p class="card-text"><b>Progreso Actual: </b>
+								<p class="card-text"><b>Fecha de Creación: </b><?php echo $row['date_created'] ?></p>
+								<p class="card-text"><b>Estado: </b>
 								<?php 
                         	if($row['status'] == 0){
 						  		echo "<span class='badge badge-info'>Pendiente</span>";
@@ -133,24 +109,9 @@
                         	}
                         	?>
 							</p>
-							<p class="card-text"><b>Fecha de Presentación: </b>
-							<?php
-$originalDate = $row['due_date'];
-// Crear un objeto DateTime a partir de la fecha original
-$dateTime = new DateTime($originalDate, new DateTimeZone('UTC')); // Asume que la fecha está en UTC
-// Cambiar la zona horaria al horario de Honduras
-$dateTime->setTimezone(new DateTimeZone('America/Tegucigalpa'));
-
-// Establecer la localización en español
-setlocale(LC_TIME, 'es_ES.UTF-8');
-
-// Formatear solo la fecha (sin hora) para mostrar en formato día de mes de año
-echo strftime("%d de %B de %Y", $dateTime->getTimestamp());
-?>
-
-							</b>
+							<p class="card-text"><b>Fecha de Presentación: </b><?php echo $row['due_date'] ?></b>
 							<p class="card-text" style="display:none"><b>Plazo Legal: </b><?php echo $row['plazoLegal'] ?> días</b>
-							<!-- <p class="card-text"><b>Cliente: </b></b> -->
+							<p class="card-text"><b>Cliente: </b><?php echo $row['cliente'] ?></b>
 							<p class="card-text"><b>Prioridad: </b>
 								<?php 
                         	if($row['prioridad'] == "Urgente"){
@@ -195,50 +156,41 @@ echo strftime("%d de %B de %Y", $dateTime->getTimestamp());
 	}
 </style>
 <script>
-	$(window).on('load', function() {
-    // Recuperar el valor almacenado
-    var valorGuardado = sessionStorage.getItem('valor');
-	console.log('Valor recuperado: ' + valorGuardado);
-    //Si el valor existe, mostrarlo en un alert y luego eliminarlo si no lo necesitas más
-    if (valorGuardado) {
-		
-        uni_modal("<i class='fa fa-edit'></i> Editar Tarea","manage_task.php?id="+valorGuardado,'large');
-        // Opcional: Limpiar el valor para evitar alertas repetidas en futuras recargas
-        //sessionStorage.removeItem('valor');
-    }
-});
+	$(document).on('keydown', function(event) {
+  if (event.key === "Escape") {
+	//$('#exampleModal').hide();
+    //$('#manage-task').hide();
+	window.location.href = 'https://demolegalagenda.tecnologiainnovacion.com/LegalAgenda/index.php?page=task_list';
+  }
 
+
+});
 	$(document).ready(function(){
 		
 		$('#carpetaRaiz').click(function(){
-			sessionStorage.removeItem('valor');
-			window.location.href = 'https://demolegalagenda.tecnologiainnovacion.com/index.php?page=carpetas';
+			window.location.href = 'https://demolegalagenda.tecnologiainnovacion.com/LegalAgenda/index.php?page=carpetas';
 		})
 		$('#search').on('input', function() {
             var textoBusqueda = $(this).val().toLowerCase(); // Obtener el texto de búsqueda y convertirlo a minúsculas
                 // Mostrar u ocultar divs según el texto de búsqueda
-			$('.tarealist').children().each(function() {
-				if ($(this).is('img')) {
-				// Si el elemento es una imagen, no se oculta
-				$(this).show();
-			}
-				var contenidoElemento = $(this).text().toLowerCase(); // Obtener el contenido del elemento y convertirlo a minúsculas
+        $('.tarealist').children().each(function() {
+			if ($(this).is('img')) {
+            // Si el elemento es una imagen, no se oculta
+            $(this).show();
+        }
+			var contenidoElemento = $(this).text().toLowerCase(); // Obtener el contenido del elemento y convertirlo a minúsculas
+        
+        // Mostrar u ocultar el elemento según el texto de búsqueda
+		
+        if (contenidoElemento.includes(textoBusqueda)) {
+            $(this).show(); // Mostrar el elemento si coincide con el texto de búsqueda
+        } else {
+            $(this).hide(); // Ocultar el elemento si no coincide con el texto de búsqueda
+        }
+
 			
-			// Mostrar u ocultar el elemento según el texto de búsqueda
-			
-			if (contenidoElemento.includes(textoBusqueda)) {
-				$(this).show(); // Mostrar el elemento si coincide con el texto de búsqueda
-			} else {
-				$(this).hide(); // Ocultar el elemento si no coincide con el texto de búsqueda
-			}	
-		});
-		$(window).on('click', function(event) {
-			// Verifica si el clic es fuera del contenido del modal
-			if ($(event.target).is('#manage-task')) {
-			alert("Diste clic fuera del modal");
-			$('#manage-task').hide(); // Oculta el modal
-			}
-		});
+        });
+		
     });
 	$('#list').dataTable();
 	$('#new_task').click(function(){
@@ -292,7 +244,7 @@ $.ajax({
 				}
 			}
 		})
-		window.location.href = 'https://demolegalagenda.tecnologiainnovacion.com/index.php?page=task_list';
+		window.location.href = 'https://demolegalagenda.tecnologiainnovacion.com/LegalAgenda/index.php?page=task_list';
                 // Aquí puedes hacer algo con el valor seleccionado
                 console.log('El valor seleccionado de la empresa es:', empresa_valor);
 				console.log('El valor seleccionado del id es:', id_valor);
@@ -339,9 +291,5 @@ $.ajax({
 	function view_progress(obj){
 		uni_modal("Progeso de: "+obj.name,"view_progress.php?id="+obj.id,'mid-large')
 	}
-	$('.manage_task').click(function(obj){
-		valor_id=$(this).attr('name');
-		sessionStorage.setItem('valor', valor_id);
-		uni_modal("<i class='fa fa-edit'></i> Editar Tarea","manage_task.php?id="+valor_id,'large');
-	})
+	
 </script>
