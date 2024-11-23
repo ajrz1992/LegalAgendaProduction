@@ -18,7 +18,7 @@
 <img src="assets/uploads/flecha.gif"  id="carpetaRaiz"><i>Regresar a Carpeta Raíz</i></img>
 <h1>
 <?php 
-			$valor = $conn->query("SELECT * from carpetas WHERE seleccionado=1 and id_usuario={$_SESSION['login_id']} and empresa='{$_SESSION['login_empresa']}'");
+			$valor = $conn->query("SELECT * from carpetas WHERE seleccionado=1 and empresa='{$_SESSION['login_empresa']}'");
                      while($row=$valor->fetch_assoc()):
         				?>
                         <b> <?php echo $row['nombre'] ?> </b>
@@ -54,7 +54,7 @@
 					$where = " where t.employee_id = '{$_SESSION['login_id']}' and t.empresa='{$_SESSION['login_empresa']}'";
 				elseif($_SESSION['login_type'] == 1)
 					$where = " where e.evaluator_id = {$_SESSION['login_id']} and e.empresa='{$_SESSION['login_empresa']}'";
-				$qry = $conn->query("SELECT t.*,concat(e.lastname,', ',e.firstname,' ',e.middlename) as name FROM task_list t inner join employee_list e on e.empresa = t.empresa $where order by unix_timestamp(t.date_created) asc");
+				$qry = $conn->query("SELECT t.*,concat(e.lastname,', ',e.firstname,' ',e.middlename) as name FROM task_list t left join employee_list e on e.empresa = t.empresa $where order by unix_timestamp(t.date_created) asc");
 				while($row= $qry->fetch_assoc()):
 					$trans = get_html_translation_table(HTML_ENTITIES,ENT_QUOTES);
 					unset($trans["\""], $trans["<"], $trans[">"], $trans["<h2"]);
