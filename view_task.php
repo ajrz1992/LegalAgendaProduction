@@ -63,7 +63,17 @@ if(isset($_GET['id'])){
             </dl>
             <dl>
                 <dt><b class="border-bottom border-primary">Fecha de Vencimiento</b></dt>
-                <dd><?php setlocale(LC_TIME, 'es_ES.UTF-8'); echo strftime('%d de %B de %Y', strtotime($due_date)); ?></dd>
+                <dd><?php
+					$months = [
+						'January' => 'enero', 'February' => 'febrero', 'March' => 'marzo',
+						'April' => 'abril', 'May' => 'mayo', 'June' => 'junio',
+						'July' => 'julio', 'August' => 'agosto', 'September' => 'septiembre',
+						'October' => 'octubre', 'November' => 'noviembre', 'December' => 'diciembre'
+					];
+					$date = strtotime($due_date);
+					$formatted_date = date("d", $date) . " de " . $months[date("F", $date)] . " de " . date("Y", $date);
+					echo "<dd>$formatted_date</dd>";
+					?></dd>
             </dl>
             <dl>
                 <dt><b class="border-bottom border-primary">Progreso Actual</b></dt>
@@ -148,7 +158,26 @@ echo '<div class="col-md-3" style="' . $style . '">';
                         } else {
                             $nombre = "";
                         }
+                        
+                        // Verificar si el campo es de tipo fecha
+                    if ($row['tipo'] === 'date') {
+                        $months = [
+                            'January' => 'enero', 'February' => 'febrero', 'March' => 'marzo',
+                            'April' => 'abril', 'May' => 'mayo', 'June' => 'junio',
+                            'July' => 'julio', 'August' => 'agosto', 'September' => 'septiembre',
+                            'October' => 'octubre', 'November' => 'noviembre', 'December' => 'diciembre'
+                        ];
+                        $date = strtotime($nombre); // Convertir el valor a timestamp
+                        if ($date) { // Verificar que sea una fecha válida
+                            $formatted_date = date("d", $date) . " de " . $months[date("F", $date)] . " de " . date("Y", $date);
+                            echo html_entity_decode($formatted_date);
+                        } else {
+                            echo "Formato de fecha inválido";
+                        }
+                    } else {
+                        // Renderizar el valor tal cual si no es fecha
                         echo html_entity_decode($nombre);
+                    }
                         ?>
                     </dd>
                 </dl>

@@ -135,6 +135,7 @@ $('#manage-task').on('submit', function(e) {
         success: function(resp) {
             if (resp == 1) {
                 alert_toast('Datos grabados satisfactoriamente', "Proceso Exitóso");
+                $('#exampleModal').hide();
                 setTimeout(function() {
                     location.reload();
                 }, 50);
